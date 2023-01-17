@@ -1,7 +1,7 @@
 #!/bin/bash
 
 sScript="$( realpath -s "$0" )"
-sUDevFile="/usr/lib/udev/rules.d/70-VirshHotplugUSB.rules"
+sUDevFile="/usr/lib/udev/rules.d/40-VirshHotplugUSB.rules"
 sLibVirtPath="/etc/libvirt/qemu/"
 
 # udev-rules
@@ -19,10 +19,11 @@ isNumber(){
 }
 
 # Remove non-existing devices
-sVmXML="$( xmlstarlet sel -t -m "/domain/devices/hostdev[@mode='subsystem'][@type='usb'][./source/@startupPolicy='optional']" -e u -c "/domain/name" -c "." "$sLibVirtPath"*".xml" )"
+sVmXML="<d>$( xmlstarlet sel -t -m "/domain/devices/hostdev[@mode='subsystem'][@type='usb'][./source/@startupPolicy='optional']" -e u -c "/domain/name" -c "." "$sLibVirtPath"*".xml" )</d>"
 for (( iHostDev = 0; ++iHostDev ; )); do
-	sHostDev="$( echo "$sVmXML" | xmlstarlet sel -t -c "/u[$iHostDev]" 2> /dev/null )"
+	sHostDev="$( echo "$sVmXML" | xmlstarlet sel -t -c "/d/u[$iHostDev]" )"
 	[[ -n "$sHostDev" ]] || break
+	
 	readarray -t asDev <<< "$( echo "$sHostDev" | xmlstarlet sel -t -m "/u/hostdev/source" -c 'concat(../../name, ";", ./vendor/@id, ";", ./product/@id, ";", ./address/@bus, ";", ./address/@device)' | tr ";" $'\n' )"
 	
 	for i in {1..4}; do
@@ -39,7 +40,7 @@ for (( iHostDev = 0; ++iHostDev ; )); do
 		# ToDo: Filter only devices from redirfilter
 	
 		sTmp="$( mktemp )"
-		echo "$sHostDev" | xmlstarlet sel -t -c "/u[$iHostDev]/hostdev" > "$sTmp"
+		echo "$sHostDev" | xmlstarlet sel -t -c "/u/hostdev" > "$sTmp"
 		virsh detach-device "${asDev[0]}" --file "$sTmp" --persistent
 		rm "$sTmp"
 	}
@@ -47,7 +48,7 @@ done
 
 # Add device based on redirfilter
 if [[ "$1" = "add" ]]; then
-	for sVmXML in "$( xmlstarlet sel -t -m $"/domain/devices/redirfilter/usbdev[@allow='yes']" -c 'concat(@vendor[.!='-1'], ";", @product[.!='-1'], ";", @class[.!='-1'], ";", @version[.!='-1'], ";", /domain/name)' -o $'\n' "$sLibVirtPath"*".xml" 2> /dev/null )"; do
+	xmlstarlet sel -t -m $"/domain/devices/redirfilter/usbdev[@allow='yes']" -c 'concat(@vendor[.!='-1'], ";", @product[.!='-1'], ";", @class[.!='-1'], ";", @version[.!='-1'], ";", /domain/name)' -o $'\n' "$sLibVirtPath"*".xml" 2> /dev/null | while read -r sVmXML; do
 		readarray -t asDev <<< "$( echo "$sVmXML" | tr ";" $'\n' )"
 		
 		for i in {0..3}; do
@@ -59,6 +60,7 @@ if [[ "$1" = "add" ]]; then
 		[[ -z "${asDev[1]}" ]] || (( 16#"${5:-0}" == ${asDev[1]} )) || continue
 		[[ -z "${asDev[2]}" ]] || (( 10#"${7:-0}" == ${asDev[2]} )) || continue
 		[[ -z "${asDev[3]}" ]] || [[ "${asDev[3]}" = "$6" ]] || continue
+		
 
 # All not working:
 #		virt-xml "${asDev[4]}" --update --add-device  --hostdev "address.type=usb,address.bus=0x$( printf "%02x" $(( 10#$2 )) ),address.devno=0x$( printf "%02x" $(( 10#$3 )) )"
