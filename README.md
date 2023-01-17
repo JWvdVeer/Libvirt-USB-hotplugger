@@ -15,3 +15,4 @@ Use:
 - Put the Libvirt-USB-hotplugger.sh script somewhere and run it once, in order to generate the udev-rules.
 - All redirfilter usbdev's should be auto-hotplugged as soon as inserted or deleted.
 - Feel free to improve / adapt. In order to make this more convenient, I already added some remarks.
+- Make sure the 'hub' in the VM has enough ports (throw away some spicevm-ports if not used). As far as I know, up to four devices are supported. Otherwise you'll need a real hub.
