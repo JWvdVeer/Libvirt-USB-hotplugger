@@ -1,15 +1,17 @@
 #!/bin/bash
 
 sScript="$( realpath -s "$0" )"
-sUDevFile="/usr/lib/udev/rules.d/40-VirshHotplugUSB.rules"
+sUDevFile="/usr/lib/udev/rules.d/99-VirshHotplugUSB.rules"
 
 # udev-rules
 if [[ ! -e "$sUDevFiles" ]]; then
 	cat << EOF > "$sUDevFile"
 # Hotplug USB to VMs
-ACTION=="add|remove", SUBSYSTEM=="usb", ENV{DEVNUM}=="[0-9]*", RUN+="/bin/bash $sScript '%E{ACTION}' '%E{BUSNUM}' '%E{DEVNUM}' '%E{ID_VENDOR_ID}' '%E{ID_MODEL_ID}' '%E{ID_REVISION}' '%E{MAJOR}'"
+ACTION=="add|remove", SUBSYSTEM=="usb", ENV{DEVNUM}=="[0-9]*", RUN+="/bin/bash $sScript"
 EOF
 	udevadm control --reload-rules
+	
+	sudo crontab <<< "$( sudo crontab -l 2> /dev/null | { sed -e "/\/bin\/bash $( echo "$sScript" | sed -e 's/[]\/$*.^[]/\\&/g' )/d"; echo "@reboot		/bin/bash $sScript"; } )"
 fi
 
 # Check for hexadecimal / octal / decimal number
