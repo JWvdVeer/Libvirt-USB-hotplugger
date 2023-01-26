@@ -27,7 +27,8 @@ while read -r sDomain; do
 	sVmXML="$sVmXML$(
 		virsh dumpxml "$sDomain" 2> /dev/null | xmlstarlet sel -t -m "/domain/devices/hostdev[@mode='subsystem'][@type='usb'][./source[@startupPolicy='optional'][./vendor/@id][./product/@id][./address[@bus][@device]]]" -e u -c "/domain/name" -c "." 2> /dev/null
 	)"
-	sRedir="$sRedir$(
+	sRedir="$(
+		echo "$sRedir"
 		virsh dumpxml "$sDomain" 2> /dev/null | xmlstarlet sel -t -m $"/domain/devices/redirfilter/usbdev[@allow='yes']" -c 'concat(@vendor[.!='-1'], ";", @product[.!='-1'], ";", @class[.!='-1'], ";", @version[.!='-1'], ";", /domain/name)' -o $'\n' 2> /dev/null
 	)"
 done <<< "$( virsh list --name --all )"
@@ -52,7 +53,7 @@ lsusb | sed 's/[^0-9]\+\([0-9]\+\)[^0-9]\+\([0-9]\+\).\+ \([[:alnum:]]\+:[[:alnu
 		[[ -z "${asDev[0]}" ]] || (( 16#"${asUSB[2]}" == ${asDev[0]} )) || continue
 		[[ -z "${asDev[1]}" ]] || (( 16#"${asUSB[3]}" == ${asDev[1]} )) || continue
 		[[ -z "${asDev[2]}" ]] || (( 10#"${asUSB[4]}" == ${asDev[2]} )) || continue
-		[[ -z "${asDev[3]}" ]] || [[ "${asDev[3]}" = "$6" ]] || continue		
+		[[ -z "${asDev[3]}" ]] || [[ "${asDev[3]}" = "$6" ]] || continue	
 
 # All not working:
 #		virt-xml "${asDev[4]}" --update --add-device  --hostdev "address.type=usb,address.bus=0x$( printf "%02x" $(( 10#$2 )) ),address.devno=0x$( printf "%02x" $(( 10#$3 )) )"
