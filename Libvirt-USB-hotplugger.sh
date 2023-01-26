@@ -4,7 +4,7 @@ sScript="$( realpath -s "$0" )"
 sUDevFile="/usr/lib/udev/rules.d/99-VirshHotplugUSB.rules"
 
 # udev-rules
-if [[ ! -e "$sUDevFiles" ]]; then
+if [[ ! -e "$sUDevFile" ]]; then
 	cat << EOF > "$sUDevFile"
 # Hotplug USB to VMs
 ACTION=="add|remove", SUBSYSTEM=="usb", ENV{DEVNUM}=="[0-9]*", RUN+="/bin/bash $sScript"
